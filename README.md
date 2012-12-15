@@ -8,34 +8,34 @@ Text for tablification
 
     test|word|another
     orbituary|so|masterpiece
-    cat|slave|grave
+    sad|slave|grave
 
 After selecting these lines you can <Leader>tt to fast-tablify data, <Leader>tc to tablify data with center alignment and <Leader>tr for right align
 
 Tablification results
 ---------------------
 
-### Without inner rows (left, center, right align)
-    +---------+-----+-----------+			+---------+-----+-----------+			+---------+-----+-----------+
-    |test     |word |another    |			|  test   |word |  another  |			|     test| word|    another|
-    |orbituary|so   |masterpiece|			|orbituary| so  |masterpiece|			|orbituary|   so|masterpiece|
-    |cat      |slave|grave      |			|   cat   |slave|   grave   |			|      cat|slave|      grave|
-    +---------+-----+-----------+			+---------+-----+-----------+			+---------+-----+-----------+
+### Without inner rows (left align)
+    +---------+-----+-----------+
+    |test     |word |another    |
+    |orbituary|so   |masterpiece|
+    |sad      |slave|grave      |
+    +---------+-----+-----------+
 
-### With inner rows (left, center, right align)
-    +---------+-----+-----------+			+---------+-----+-----------+			+---------+-----+-----------+
-    |test     |word |another    |			|  test   |word |  another  |			|     test| word|    another|
-    +---------+-----+-----------+			+---------+-----+-----------+			+---------+-----+-----------+
-    |orbituary|so   |masterpiece|			|orbituary| so  |masterpiece|			|orbituary|   so|masterpiece|
-    +---------+-----+-----------+			+---------+-----+-----------+			+---------+-----+-----------+
-    |cat      |slave|grave      |			|   cat   |slave|   grave   |			|      cat|slave|      grave|
-    +---------+-----+-----------+			+---------+-----+-----------+			+---------+-----+-----------+
+### With inner rows (left align)
+    +---------+-----+-----------+
+    |test     |word |another    |
+    +---------+-----+-----------+
+    |orbituary|so   |masterpiece|
+    +---------+-----+-----------+
+    |sad      |slave|grave      |
+    +---------+-----+-----------+
 
-### With inner rows and cell padding (left, center, right align)
-    +-----------+-------+-------------+		+-----------+-------+-------------+		+-----------+-------+-------------+
-    | test      | word  | another     |		|   test    | word  |   another   |		|      test |  word |     another |
-    +-----------+-------+-------------+		+-----------+-------+-------------+		+-----------+-------+-------------+
-    | orbituary | so    | masterpiece |		| orbituary |  so   | masterpiece |		| orbituary |    so | masterpiece |
-    +-----------+-------+-------------+		+-----------+-------+-------------+		+-----------+-------+-------------+
-    | cat       | slave | grave       |		|    cat    | slave |    grave    |		|       cat | slave |       grave |
-    +-----------+-------+-------------+		+-----------+-------+-------------+		+-----------+-------+-------------+
+### With inner rows and cell padding (left align)
+    +-----------+-------+-------------+
+    | test      | word  | another     |
+    +-----------+-------+-------------+
+    | orbituary | so    | masterpiece |
+    +-----------+-------+-------------+
+    | sad       | slave | grave       |
+    +-----------+-------+-------------+
