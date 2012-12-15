@@ -10,7 +10,8 @@ Text for tablification
     orbituary|so|masterpiece
     sad|slave|grave
 
-After selecting these lines you can <Leader>tt to fast-tablify data, <Leader>tc to tablify data with center alignment and <Leader>tr for right align
+After selecting these lines you can `<Leader>tt` to fast-tablify data, `<Leader>tc` to tablify data with center alignment and `<Leader>tr` for right align.
+If you want to edit raw table data (original text for tablification) you can select the table and press `<Leader>tu` to revert table to raw text.
 
 Tablification results
 ---------------------
