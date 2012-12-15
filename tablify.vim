@@ -1,5 +1,5 @@
 " Vim tablification plugin - turns data into nice-looking tables
-" Last Change:	2012 Dec 14
+" Last Change:	2012 Dec 16
 " Maintainer:	Vladimir Shvets <stormherz@gmail.com>
 
 " to debug or not to debug (messages, info, etc)
@@ -12,6 +12,10 @@ let g:loaded_tablify = 1
 
 " delimiter used for tablification/untablification process
 let s:delimiter = '|'
+if exists("g:tablify_raw_delimiter")
+    let s:delimiter = g:tablify_raw_delimiter
+endif
+
 
 " fillers for the result table
 let s:vertDelimiter = '|'
@@ -37,7 +41,7 @@ if !hasmapto('Untablify')
 endif
 
 " Outputs debug messages if debug mode is set (g:debug)
-function! <SID>DebugEcho(msg)
+function! DebugEcho(msg)
     if !s:debug
         return
     endif
@@ -46,7 +50,7 @@ function! <SID>DebugEcho(msg)
     echo a:msg
 endfunction
 
-function! <SID>Tablify(align) range
+function! Tablify(align) range
     let s:align = a:align
 
     if a:firstline == a:lastline
@@ -118,7 +122,7 @@ function! <SID>Tablify(align) range
     call setpos('.', saveCursor)
 endfunction
 
-function! <SID>Untablify() range
+function! Untablify() range
     if a:firstline == a:lastline
         return
     endif
@@ -166,7 +170,7 @@ function! <SID>Untablify() range
     call setpos('.', saveCursor)
 endfunction
 
-function! <SID>MakeCell(word, width)
+function! MakeCell(word, width)
     let res = a:word
     let wordLength = len(a:word)
     if a:width > wordLength
@@ -190,7 +194,7 @@ function! <SID>MakeCell(word, width)
     return res
 endfunction
 
-function! <SID>GetColumnWidths(fline, lline)
+function! GetColumnWidths(fline, lline)
     let linenum = a:fline
     let maxColumnWidth = []
 
