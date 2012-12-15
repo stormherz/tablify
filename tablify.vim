@@ -16,32 +16,52 @@ if exists("g:tablify_raw_delimiter")
     let s:delimiter = g:tablify_raw_delimiter
 endif
 
-
 " fillers for the result table
 let s:vertDelimiter = '|'
 let s:horDelimiter = '-'
 let s:divideDelimiter = '+'
+if exists("g:tablify_vertical_delimiter")
+    let s:vertDelimiter = g:tablify_vertical_delimiter
+endif
+if exists("g:tablify_horizontal_delimiter")
+    let s:horDelimiter = g:tablify_horizontal_delimiter
+endif
+if exists("g:tablify_division_delimiter")
+    let s:divideDelimiter = g:tablify_division_delimiter
+endif
 
 " use row delimiters
 let s:noInnerRows = 0
+if exists("g:tablify_no_inner_rows")
+    let s:noInnerRows = g:tablify_no_inner_rows
+endif
 
 " space paddings for table cell content
 let s:cellLeftPadding = 1
 let s:cellRightPadding = 1
+if exists("g:tablify_left_padding")
+    let s:cellLeftPadding = g:tablify_left_padding
+endif
+if exists("g:tablify_right_padding")
+    let s:cellRightPadding = g:tablify_right_padding
+endif
 
 " alignment
 let s:align = 'left'
+if exists("g:tablify_align")
+    let s:align = g:tablify_align
+endif
 
-noremap <script> <silent> <Leader>tt :call Tablify('left')<CR>
-noremap <script> <silent> <Leader>tr :call Tablify('right')<CR>
-noremap <script> <silent> <Leader>tc :call Tablify('center')<CR>
+noremap <script> <silent> <Leader>tt :call <SID>Tablify('left')<CR>
+noremap <script> <silent> <Leader>tr :call <SID>Tablify('right')<CR>
+noremap <script> <silent> <Leader>tc :call <SID>Tablify('center')<CR>
 
 if !hasmapto('Untablify')
-    noremap <script> <silent> <Leader>tu :call Untablify()<CR>
+    noremap <script> <silent> <Leader>tu :call <SID>Untablify()<CR>
 endif
 
 " Outputs debug messages if debug mode is set (g:debug)
-function! DebugEcho(msg)
+function! <SID>DebugEcho(msg)
     if !s:debug
         return
     endif
@@ -50,7 +70,7 @@ function! DebugEcho(msg)
     echo a:msg
 endfunction
 
-function! Tablify(align) range
+function! <SID>Tablify(align) range
     let s:align = a:align
 
     if a:firstline == a:lastline
@@ -122,7 +142,7 @@ function! Tablify(align) range
     call setpos('.', saveCursor)
 endfunction
 
-function! Untablify() range
+function! <SID>Untablify() range
     if a:firstline == a:lastline
         return
     endif
@@ -170,7 +190,7 @@ function! Untablify() range
     call setpos('.', saveCursor)
 endfunction
 
-function! MakeCell(word, width)
+function! <SID>MakeCell(word, width)
     let res = a:word
     let wordLength = len(a:word)
     if a:width > wordLength
@@ -194,7 +214,7 @@ function! MakeCell(word, width)
     return res
 endfunction
 
-function! GetColumnWidths(fline, lline)
+function! <SID>GetColumnWidths(fline, lline)
     let linenum = a:fline
     let maxColumnWidth = []
 
