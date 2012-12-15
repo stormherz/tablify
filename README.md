@@ -6,9 +6,9 @@ Tablify is simple tablification plugin for VIM. It formats the raw data into nic
 Text for tablification
 ----------------------
 
-`test|word|another`
-`orbituary|so|masterpiece`
-`cat|slave|grave`
+`test|word|another<br>
+orbituary|so|masterpiece<br>
+cat|slave|grave`
 
 After selecting these lines you can <Leader>tt to fast-tablify data, <Leader>tc to tablify data with center alignment and <Leader>tr for right align
 
