@@ -16,6 +16,7 @@ There is a small list of commands you need to know before starting making tables
 Every line of your future table is a text line with cells, separated by `|` symbol (or any other symbol you choose for `g:tablify_raw_delimiter` variable in your `.vimrc` file).
 
 Let's assume we have a few lines of text we would like to see as table:  
+
     Artist | Song | Album | Year
     Tool | Useful idiot | Ænima | 1996
     Pantera | Cemetery Gates | Cowboys from Hell | 1990
@@ -36,6 +37,7 @@ Now select these lines and press `\tt` to make a table:
 I bet it was pretty simple. Now you can press `u` to undo making of table or select table and press `\tu` to return to the text you're started from. After that you can try `\tc` and `\tr` to see what it looks like to have aligned text in table.
 
 It is obvious that our table here have some kind of header and it will be great to visually distinguish it from table data. To do so, just separate the header cells with `#` symbol (or any other symbol you choose for `g:tablify_header_delimiter` variable in your `.vimrc` file):  
+
     Artist # Song # Album # Year
     Tool | Useful idiot | Ænima | 1996
     Pantera | Cemetery Gates | Cowboys from Hell | 1990
@@ -43,6 +45,7 @@ It is obvious that our table here have some kind of header and it will be great 
 
 
 And that's what we get after tablification:
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     | Artist        | Song                   | Album             | Year |
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
