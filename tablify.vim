@@ -190,7 +190,7 @@ function! <SID>Untablify() range
         let line = getline(i)
         let words = split(line, s:vertDelimiter)
        
-        if line == repeat(s:horHeaderDelimiter, len(line)) && headerLine == 0
+        if line == repeat(s:horHeaderDelimiter, strwidth(line)) && headerLine == 0
             let isHeader = 1
             let headerLine = i + 1
         endif
@@ -240,7 +240,7 @@ endfunction
 
 function! <SID>MakeCell(word, width)
     let res = a:word
-    let wordLength = len(a:word)
+    let wordLength = strwidth(a:word)
     if a:width > wordLength
         if s:align == 'right'
             let res = repeat(' ', a:width - wordLength) . res
@@ -287,7 +287,7 @@ function! <SID>GetColumnWidths(fline, lline)
         let j = 0
         while j < wordCount
             let word = substitute(words[j], "^\\s\\+\\|\\s\\+$", '', 'g') 
-            let wordLen = len(word)
+            let wordLen = strwidth(word)
             if len(maxColumnWidth) < wordCount
                 call insert(maxColumnWidth, wordLen, j)
             else
