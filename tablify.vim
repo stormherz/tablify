@@ -11,7 +11,11 @@ endif
 let g:loaded_tablify = 1
 
 " delimiter used for tablification/untablification process
+let s:headerDelimiter = '#'
 let s:delimiter = '|'
+if exists("g:tablify_header_delimiter")
+    let s:headerDelimiter = g:tablify_header_delimiter
+endif
 if exists("g:tablify_raw_delimiter")
     let s:delimiter = g:tablify_raw_delimiter
 endif
@@ -19,6 +23,7 @@ endif
 " fillers for the result table
 let s:vertDelimiter = '|'
 let s:horDelimiter = '-'
+let s:horHeaderDelimiter = '~'
 let s:divideDelimiter = '+'
 if exists("g:tablify_vertical_delimiter")
     let s:vertDelimiter = g:tablify_vertical_delimiter
@@ -56,9 +61,7 @@ noremap <script> <silent> <Leader>tt :call <SID>Tablify('left')<CR>
 noremap <script> <silent> <Leader>tr :call <SID>Tablify('right')<CR>
 noremap <script> <silent> <Leader>tc :call <SID>Tablify('center')<CR>
 
-if !hasmapto('Untablify')
-    noremap <script> <silent> <Leader>tu :call <SID>Untablify()<CR>
-endif
+noremap <script> <silent> <Leader>tu :call <SID>Untablify()<CR>
 
 " Outputs debug messages if debug mode is set (g:debug)
 function! <SID>DebugEcho(msg)
@@ -77,7 +80,7 @@ function! <SID>Tablify(align) range
         return
     endif
 
-    let columnWidths = GetColumnWidths(a:firstline, a:lastline)
+    let columnWidths = <SID>GetColumnWidths(a:firstline, a:lastline)
     let columnCnt = len(columnWidths)
     if columnCnt == 0
         return
@@ -85,32 +88,50 @@ function! <SID>Tablify(align) range
 
     let i = 0
     let delimiterRow = s:divideDelimiter
+    let columnsWidth = 0
     while i < columnCnt
         if s:cellLeftPadding > 0
             let spacer = repeat(s:horDelimiter, s:cellLeftPadding) 
             let delimiterRow = delimiterRow . spacer
+            let columnsWidth += s:cellLeftPadding
         endif
         if s:cellRightPadding > 0
             let spacer = repeat(s:horDelimiter, s:cellRightPadding) 
             let delimiterRow = delimiterRow . spacer
+            let columnsWidth += s:cellRightPadding
         endif
     
         let delimiterRow .= repeat(s:horDelimiter, columnWidths[i]) . s:divideDelimiter
+        let columnsWidth += columnWidths[i]
         let i += 1    
     endwhile
+    let delimiterHeaderRow = repeat(s:horHeaderDelimiter, len(columnWidths) + 1 + columnsWidth)
 
     let i = a:firstline
+    let isHeader = 0
     while i <= a:lastline
         let line = getline(i)
         let words = split(line, s:delimiter)
         
         let j = 0
+
         let wordsCnt = len(words)
+        if wordsCnt == 1
+            let words = split(line, s:headerDelimiter)
+            let wordsCnt = len(words)
+            
+            if wordsCnt == 1
+                continue
+            endif
+
+            let isHeader = 1
+        endif
+
         let newLine = s:vertDelimiter
         while j < wordsCnt
             let word = substitute(words[j], "^\\s\\+\\|\\s\\+$", '', 'g') 
             
-            let cell = MakeCell(word, columnWidths[j])
+            let cell = <SID>MakeCell(word, columnWidths[j])
             let newLine .= cell . s:vertDelimiter
 
             let j += 1
@@ -126,12 +147,27 @@ function! <SID>Tablify(align) range
         call append(a:firstline - 1, delimiterRow)
         call append(a:lastline + 1, delimiterRow)
     else
-        let i = a:lastline - a:firstline
-        call append(a:firstline - 1, delimiterRow)
+        let diff = a:lastline - a:firstline
+        let i = diff
+
+        if isHeader == 1
+            call append(a:firstline - 1, delimiterHeaderRow)
+        else
+            call append(a:firstline - 1, delimiterRow)
+        endif
 
         let start = 1
         while i > 0
-            call append(a:firstline + start, delimiterRow)
+            if isHeader == 1 && start <= 2
+                call append(a:firstline + start, delimiterHeaderRow)
+            else
+                call append(a:firstline + start, delimiterRow)
+            endif
+
+            if start == 3
+                let isHeader = 0
+            endif
+
             let i -= 1
             let start += 2
         endwhile
@@ -148,9 +184,16 @@ function! <SID>Untablify() range
     endif
 
     let i = a:firstline
+    let isHeader = 0
+    let headerLine = 0
     while i <= a:lastline
         let line = getline(i)
         let words = split(line, s:vertDelimiter)
+       
+        if line == repeat(s:horHeaderDelimiter, len(line)) && headerLine == 0
+            let isHeader = 1
+            let headerLine = i + 1
+        endif
 
         if words[0][0] == s:divideDelimiter && len(words) == 1
             let i += 1
@@ -167,7 +210,12 @@ function! <SID>Untablify() range
             let j += 1
         endwhile
 
-        call setline(i, join(wordsList, s:delimiter))
+        if isHeader == 1 && headerLine == i
+            call setline(i, join(wordsList, s:headerDelimiter))
+            let isHeader = 0
+        else
+            call setline(i, join(wordsList, s:delimiter))
+        endif
 
         let i += 1
     endwhile
@@ -218,13 +266,16 @@ function! <SID>GetColumnWidths(fline, lline)
     let linenum = a:fline
     let maxColumnWidth = []
 
-    call DebugEcho('Counting ' . ((a:lline - a:fline) + 1) . ' lines for tablification')
+    call <SID>DebugEcho('Counting ' . ((a:lline - a:fline) + 1) . ' lines for tablification')
 
     while linenum <= a:lline
         let line = getline(linenum)
         let words = split(line, s:delimiter)
+        if len(words) == 1
+            let words = split(line, s:headerDelimiter)
+        endif
 
-        call DebugEcho('Line #' . linenum . ': ' . line)
+        call <SID>DebugEcho('Line #' . linenum . ': ' . line)
 
         if linenum == a:fline
             let wordCount = len(words)
