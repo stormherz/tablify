@@ -8,7 +8,7 @@ Put `tablify.vim` in your vim's plugin directory and you're ready to go.
 
 ##Usage
 There is a small list of commands you need to know before starting making tables out of your text. Assuming your `<Leader>` is `\`:  
-`\tl` (or `\tt`) - turns selected lines into table (left-aligned text)  
+`\tl` or `\tt` - turns selected lines into table (left-aligned text)  
 `\tc` - turns selected lines into table (centered text)  
 `\tr` - turns selected lines into table (right-aligned text)  
 `\tu` - convert selected table back into raw text format in case you want to add some changes in it
