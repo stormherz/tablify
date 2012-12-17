@@ -31,6 +31,9 @@ endif
 if exists("g:tablify_horizontal_delimiter")
     let s:horDelimiter = g:tablify_horizontal_delimiter
 endif
+if exists("g:tablify_horizontal_header_delimiter")
+    let s:horHeaderDelimiter = g:tablify_horizontal_header_delimiter
+endif
 if exists("g:tablify_division_delimiter")
     let s:divideDelimiter = g:tablify_division_delimiter
 endif
@@ -58,6 +61,7 @@ if exists("g:tablify_align")
 endif
 
 noremap <script> <silent> <Leader>tt :call <SID>Tablify('left')<CR>
+noremap <script> <silent> <Leader>tl :call <SID>Tablify('left')<CR>
 noremap <script> <silent> <Leader>tr :call <SID>Tablify('right')<CR>
 noremap <script> <silent> <Leader>tc :call <SID>Tablify('center')<CR>
 
@@ -111,13 +115,13 @@ function! <SID>Tablify(align) range
     let isHeader = 0
     while i <= a:lastline
         let line = getline(i)
-        let words = split(line, s:delimiter)
+        let words = split(line, s:delimiter, 1)
         
         let j = 0
 
         let wordsCnt = len(words)
         if wordsCnt == 1
-            let words = split(line, s:headerDelimiter)
+            let words = split(line, s:headerDelimiter, 1)
             let wordsCnt = len(words)
             
             if wordsCnt == 1
@@ -270,9 +274,9 @@ function! <SID>GetColumnWidths(fline, lline)
 
     while linenum <= a:lline
         let line = getline(linenum)
-        let words = split(line, s:delimiter)
+        let words = split(line, s:delimiter, 1)
         if len(words) == 1
-            let words = split(line, s:headerDelimiter)
+            let words = split(line, s:headerDelimiter, 1)
         endif
 
         call <SID>DebugEcho('Line #' . linenum . ': ' . line)

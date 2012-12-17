@@ -8,7 +8,7 @@ Put `tablify.vim` in your vim's plugin directory and you're ready to go.
 
 ##Usage
 There is a small list of commands you need to know before starting making tables out of your text. Assuming your `<Leader>` is `\`:  
-`\tt` - turns selected lines into table (left-aligned text)  
+`\tl` (or `\tt`) - turns selected lines into table (left-aligned text)  
 `\tc` - turns selected lines into table (centered text)  
 `\tr` - turns selected lines into table (right-aligned text)  
 `\tu` - convert selected table back into raw text format in case you want to add some changes in it
@@ -63,7 +63,8 @@ You can configure the behaviour of tablify with global variables:
 `g:tablify_header_delimiter` - default value is `#`, symbol that will be used for header cells separation  
 `g:tablify_raw_delimiter` - default value is `|`, symbol that will be used for header cells separation  
 `g:tablify_vertical_delimiter` - default value is `|`, vertical delimiter symbol for filling up table rows  
-`g:tablify_horizontal_delimiter` - default value is `-`, horizontal delimiter sybol for filling up table rows  
+`g:tablify_horizontal_delimiter` - default value is `-`, horizontal delimiter symbol for filling up table rows  
+`g:tablify_horizontal_header_delimiter` - default value is `~`, horizontal delimiter symbol for filling up tabls header rows
 `g:tablify_no_inner_rows` - default value is 0, you can set value to 1 to disable inner delimiter rows  
 `g:tablify_left_padding` - default value is 1, number of spaces used for left cell padding  
 `g:tablify_right_padding` - default value is 1, number of spaces used for right cell padding
