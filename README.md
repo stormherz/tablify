@@ -62,6 +62,16 @@ And that's what we get after tablification:
     | Ozzy Osbourne | Let Me Hear You Scream | Scream            | 2010 |
     +---------------+------------------------+-------------------+------+
 
+There is no problem of making tables out of commonly prefixed text lines, like:
+
+    /**
+     * Artist#Song#Album#Year
+     * Tool|Useful idiot|Ænima|1996
+     * Pantera|Cemetery Gates|Cowboys from Hell|1990
+     * Ozzy Osbourne|Let Me Hear You Scream|Scream|2010
+     *
+     */
+
 
 ## Configuration
 You can configure the behaviour of tablify with global variables:  

@@ -1,5 +1,5 @@
 " Vim tablification plugin - turns data into nice-looking tables
-" Last Change:	2012 Dec 16
+" Last Change:	2012 Dec 18
 " Maintainer:	Vladimir Shvets <stormherz@gmail.com>
 
 " to debug or not to debug (messages, info, etc)
@@ -107,14 +107,22 @@ function! <SID>Tablify(align) range
     
         let delimiterRow .= repeat(s:horDelimiter, columnWidths[i]) . s:divideDelimiter
         let columnsWidth += columnWidths[i]
-        let i += 1    
+        let i += 1
     endwhile
     let delimiterHeaderRow = repeat(s:horHeaderDelimiter, len(columnWidths) + 1 + columnsWidth)
+
+    let prefix = <SID>GetCommonPrefix(a:firstline, a:lastline)
+    let delimiterRow = prefix . delimiterRow
+    let delimiterHeaderRow = prefix . delimiterHeaderRow
 
     let i = a:firstline
     let isHeader = 0
     while i <= a:lastline
         let line = getline(i)
+        if prefix != ''
+            let line = strpart(line, strwidth(prefix))
+        endif
+
         let words = split(line, s:delimiter, 1)
         
         let j = 0
@@ -141,7 +149,7 @@ function! <SID>Tablify(align) range
             let j += 1
         endwhile
 
-        call setline(i, newLine)
+        call setline(i, prefix . newLine)
 
         let i += 1
     endwhile
@@ -187,11 +195,17 @@ function! <SID>Untablify() range
         return
     endif
 
+    let prefix = <SID>GetCommonPrefix(a:firstline, a:lastline)
+
     let i = a:firstline
     let isHeader = 0
     let headerLine = 0
     while i <= a:lastline
         let line = getline(i)
+        if prefix != ''
+            let line = strpart(line, strwidth(prefix))
+        endif
+
         let words = split(line, s:vertDelimiter)
        
         if line == repeat(s:horHeaderDelimiter, strwidth(line)) && headerLine == 0
@@ -215,10 +229,10 @@ function! <SID>Untablify() range
         endwhile
 
         if isHeader == 1 && headerLine == i
-            call setline(i, join(wordsList, s:headerDelimiter))
+            call setline(i, prefix . join(wordsList, s:headerDelimiter))
             let isHeader = 0
         else
-            call setline(i, join(wordsList, s:delimiter))
+            call setline(i, prefix . join(wordsList, s:delimiter))
         endif
 
         let i += 1
@@ -264,6 +278,41 @@ function! <SID>MakeCell(word, width)
     endif
 
     return res
+endfunction
+
+function! <SID>GetCommonPrefix(fline, lline)
+    if a:fline == a:lline
+        return ''
+    endif
+
+    let linenum = a:fline + 1
+    let firstline = getline(a:fline)
+    let prefix = ''
+
+    while linenum <= a:lline
+        let line = getline(linenum)
+
+        if strwidth(prefix) != ''
+            let index = stridx(line, prefix)
+            if index != 0
+                return ''
+            endif
+        else
+            let i = 0
+            while strwidth(line) > i && strwidth(firstline) > i && line[i] == firstline[i]
+                let prefix .= line[i]
+                let i += 1
+            endwhile
+
+            if prefix == ''
+                return ''
+            endif
+        endif
+
+        let linenum += 1
+    endwhile
+
+    return prefix
 endfunction
 
 function! <SID>GetColumnWidths(fline, lline)
