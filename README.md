@@ -3,7 +3,13 @@
 Tablify is a VIM plugin that turns simple structured data into nice-looking tables.
 
 ##Installation
-Put `tablify.vim` in your vim's plugin directory and you're ready to go.
+Put `tablify.vim` in your vim's plugin directory and you're ready to go.  
+For [pathogen](https://github.com/tpope/vim-pathogen) users, just:  
+
+    cd ~/.vim/bundle
+    git clone git://github.com/Stormherz/tablify.git
+
+And you're ready to go.
 
 
 ##Usage
