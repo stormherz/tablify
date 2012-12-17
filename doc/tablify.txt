@@ -1,0 +1,11 @@
+*tablify.txt*	For Vim version 7.0	Last change: 2012 Dec 17
+
+Author: Vladimir Shvets <stormherz@gmail.com>
+
+DESCRIPTION                                    *tablify*
+
+Tablify is a VIM plugin that turns simple structured data into nice-looking tables.
+
+USAGE                                          *tablify-usage*
+
+ vim:tw=78:et:ft=help:norl:
