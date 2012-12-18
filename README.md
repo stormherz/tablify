@@ -74,13 +74,16 @@ There is no problem of making tables out of commonly prefixed text lines, like:
 
 
 ## Configuration
-You can configure the behaviour of tablify with global variables:  
+Tablify behaviour can be configured on per-buffer basis with the folowing variables:  
 `g:loaded_tablify` - set to `1` to disable loading of the plugin  
-`g:tablify_header_delimiter` - default value is `#`, symbol that will be used for header cells separation  
-`g:tablify_raw_delimiter` - default value is `|`, symbol that will be used for header cells separation  
-`g:tablify_vertical_delimiter` - default value is `|`, vertical delimiter symbol for filling up table rows  
-`g:tablify_horizontal_delimiter` - default value is `-`, horizontal delimiter symbol for filling up table rows  
-`g:tablify_horizontal_header_delimiter` - default value is `~`, horizontal delimiter symbol for filling up tabls header rows  
-`g:tablify_no_inner_rows` - default value is `0`, you can set value to `1` to disable inner delimiter rows  
-`g:tablify_left_padding` - default value is `1`, number of spaces used for left cell padding  
-`g:tablify_right_padding` - default value is `1`, number of spaces used for right cell padding
+`b:tablify_headerDelimiter` - default value is `#`, symbol that separates header cells in text
+`b:tablify_delimiter` - default value is `|`, symbol that separated value cells in text  
+  
+`b:tablify_vertDelimiter` - default value is `|`, vertical delimiter symbol for filling up table rows  
+`b:tablify_horDelimiter` - default value is `-`, horizontal delimiter symbol for filling up table rows  
+`b:tablify_horHeaderDelimiter` - default value is `~`, horizontal delimiter symbol for filling up tabls header rows  
+`b:tablify_divideDelimiter` - default value is `+`, symbol at the row/column intersection
+  
+`b:tablify_noInnerRows` - default value is `0`, you can set value to `1` to disable inner delimiter rows  
+`b:tablify_cellLeftPadding` - default value is `1`, number of spaces used for left cell padding  
+`b:tablify_cellRightPadding` - default value is `1`, number of spaces used for right cell padding

@@ -3,62 +3,13 @@
 " Maintainer:	Vladimir Shvets <stormherz@gmail.com>
 
 " to debug or not to debug (messages, info, etc)
-let s:debug = 0
+let s:tablify_debug = 0
 
-if exists("g:loaded_tablify") && s:debug == 0
+if exists("g:loaded_tablify") && s:tablify_debug == 0
     finish
 endif
 let g:loaded_tablify = 1
 
-" delimiter used for tablification/untablification process
-let s:headerDelimiter = '#'
-let s:delimiter = '|'
-if exists("g:tablify_header_delimiter")
-    let s:headerDelimiter = g:tablify_header_delimiter
-endif
-if exists("g:tablify_raw_delimiter")
-    let s:delimiter = g:tablify_raw_delimiter
-endif
-
-" fillers for the result table
-let s:vertDelimiter = '|'
-let s:horDelimiter = '-'
-let s:horHeaderDelimiter = '~'
-let s:divideDelimiter = '+'
-if exists("g:tablify_vertical_delimiter")
-    let s:vertDelimiter = g:tablify_vertical_delimiter
-endif
-if exists("g:tablify_horizontal_delimiter")
-    let s:horDelimiter = g:tablify_horizontal_delimiter
-endif
-if exists("g:tablify_horizontal_header_delimiter")
-    let s:horHeaderDelimiter = g:tablify_horizontal_header_delimiter
-endif
-if exists("g:tablify_division_delimiter")
-    let s:divideDelimiter = g:tablify_division_delimiter
-endif
-
-" use row delimiters
-let s:noInnerRows = 0
-if exists("g:tablify_no_inner_rows")
-    let s:noInnerRows = g:tablify_no_inner_rows
-endif
-
-" space paddings for table cell content
-let s:cellLeftPadding = 1
-let s:cellRightPadding = 1
-if exists("g:tablify_left_padding")
-    let s:cellLeftPadding = g:tablify_left_padding
-endif
-if exists("g:tablify_right_padding")
-    let s:cellRightPadding = g:tablify_right_padding
-endif
-
-" alignment
-let s:align = 'left'
-if exists("g:tablify_align")
-    let s:align = g:tablify_align
-endif
 
 noremap <script> <silent> <Leader>tt :call <SID>Tablify('left')<CR>
 noremap <script> <silent> <Leader>tl :call <SID>Tablify('left')<CR>
@@ -69,7 +20,7 @@ noremap <script> <silent> <Leader>tu :call <SID>Untablify()<CR>
 
 " Outputs debug messages if debug mode is set (g:debug)
 function! <SID>DebugEcho(msg)
-    if !s:debug
+    if !s:tablify_debug
         return
     endif
 
@@ -77,12 +28,34 @@ function! <SID>DebugEcho(msg)
     echo a:msg
 endfunction
 
-function! <SID>Tablify(align) range
-    let s:align = a:align
+" Reassign configuration variables (called before Tablify/Untablify processing)
+" Configuration is related to buffer
+function! <SID>Reconfigure()
+    " delimiters used for tablification/untablification process
+    let b:tablify_headerDelimiter = exists('b:tablify_headerDelimiter') ? b:tablify_headerDelimiter : '#'
+    let b:tablify_delimiter = exists('b:tablify_delimiter') ? b:tablify_delimiter : '|'
 
+    " filler symmbols for the result table
+    let b:tablify_vertDelimiter = exists('b:tablify_vertDelimiter') ? b:tablify_vertDelimiter : '|'
+    let b:tablify_horDelimiter = exists('b:tablify_horDelimiter') ? b:tablify_horDelimiter : '-'
+    let b:tablify_horHeaderDelimiter = exists('b:tablify_horHeaderDelimiter') ? b:tablify_horHeaderDelimiter : '~'
+    let b:tablify_divideDelimiter = exists('b:tablify_divideDelimiter') ? b:tablify_divideDelimiter : '+'
+
+    " use row delimiters
+    let b:tablify_noInnerRows = exists('b:tablify_noInnerRows') ? b:tablify_noInnerRows : 0
+
+    " number of spaces for left and right table cell padding
+    let b:tablify_cellLeftPadding = exists('b:tablify_cellLeftPadding') ? b:tablify_cellLeftPadding : 1
+    let b:tablify_cellRightPadding = exists('b:tablify_cellRightPadding') ? b:tablify_cellRightPadding : 1
+endfunction
+
+function! <SID>Tablify(align) range
     if a:firstline == a:lastline
         return
     endif
+
+    let b:align = a:align
+    call <SID>Reconfigure()
 
     let columnWidths = <SID>GetColumnWidths(a:firstline, a:lastline)
     let columnCnt = len(columnWidths)
@@ -91,25 +64,25 @@ function! <SID>Tablify(align) range
     endif
 
     let i = 0
-    let delimiterRow = s:divideDelimiter
+    let delimiterRow = b:tablify_divideDelimiter
     let columnsWidth = 0
     while i < columnCnt
-        if s:cellLeftPadding > 0
-            let spacer = repeat(s:horDelimiter, s:cellLeftPadding) 
+        if b:tablify_cellLeftPadding > 0
+            let spacer = repeat(b:tablify_horDelimiter, b:tablify_cellLeftPadding) 
             let delimiterRow = delimiterRow . spacer
-            let columnsWidth += s:cellLeftPadding
+            let columnsWidth += b:tablify_cellLeftPadding
         endif
-        if s:cellRightPadding > 0
-            let spacer = repeat(s:horDelimiter, s:cellRightPadding) 
+        if b:tablify_cellRightPadding > 0
+            let spacer = repeat(b:tablify_horDelimiter, b:tablify_cellRightPadding) 
             let delimiterRow = delimiterRow . spacer
-            let columnsWidth += s:cellRightPadding
+            let columnsWidth += b:tablify_cellRightPadding
         endif
     
-        let delimiterRow .= repeat(s:horDelimiter, columnWidths[i]) . s:divideDelimiter
+        let delimiterRow .= repeat(b:tablify_horDelimiter, columnWidths[i]) . b:tablify_divideDelimiter
         let columnsWidth += columnWidths[i]
         let i += 1
     endwhile
-    let delimiterHeaderRow = repeat(s:horHeaderDelimiter, len(columnWidths) + 1 + columnsWidth)
+    let delimiterHeaderRow = repeat(b:tablify_horHeaderDelimiter, len(columnWidths) + 1 + columnsWidth)
 
     let prefix = <SID>GetCommonPrefix(a:firstline, a:lastline)
     let delimiterRow = prefix . delimiterRow
@@ -123,13 +96,13 @@ function! <SID>Tablify(align) range
             let line = strpart(line, strwidth(prefix))
         endif
 
-        let words = split(line, s:delimiter, 1)
+        let words = split(line, escape(b:tablify_delimiter, '$^'), 1)
         
         let j = 0
 
         let wordsCnt = len(words)
         if wordsCnt == 1
-            let words = split(line, s:headerDelimiter, 1)
+            let words = split(line, escape(b:tablify_headerDelimiter, '$^'), 1)
             let wordsCnt = len(words)
             
             if wordsCnt == 1
@@ -139,12 +112,12 @@ function! <SID>Tablify(align) range
             let isHeader = 1
         endif
 
-        let newLine = s:vertDelimiter
+        let newLine = b:tablify_vertDelimiter
         while j < wordsCnt
             let word = substitute(words[j], "^\\s\\+\\|\\s\\+$", '', 'g') 
             
             let cell = <SID>MakeCell(word, columnWidths[j])
-            let newLine .= cell . s:vertDelimiter
+            let newLine .= cell . b:tablify_vertDelimiter
 
             let j += 1
         endwhile
@@ -155,7 +128,7 @@ function! <SID>Tablify(align) range
     endwhile
 
     let saveCursor = getpos(".")
-    if s:noInnerRows
+    if b:tablify_noInnerRows
         call append(a:firstline - 1, delimiterRow)
         call append(a:lastline + 1, delimiterRow)
     else
@@ -195,6 +168,8 @@ function! <SID>Untablify() range
         return
     endif
 
+    call <SID>Reconfigure()
+
     let prefix = <SID>GetCommonPrefix(a:firstline, a:lastline)
 
     let i = a:firstline
@@ -206,14 +181,14 @@ function! <SID>Untablify() range
             let line = strpart(line, strwidth(prefix))
         endif
 
-        let words = split(line, s:vertDelimiter)
+        let words = split(line, b:tablify_vertDelimiter)
        
-        if line == repeat(s:horHeaderDelimiter, strwidth(line)) && headerLine == 0
+        if line == repeat(b:tablify_horHeaderDelimiter, strwidth(line)) && headerLine == 0
             let isHeader = 1
             let headerLine = i + 1
         endif
 
-        if words[0][0] == s:divideDelimiter && len(words) == 1
+        if words[0][0] == b:tablify_divideDelimiter && len(words) == 1
             let i += 1
             continue
         endif
@@ -229,17 +204,17 @@ function! <SID>Untablify() range
         endwhile
 
         if isHeader == 1 && headerLine == i
-            call setline(i, prefix . join(wordsList, s:headerDelimiter))
+            call setline(i, prefix . join(wordsList, b:tablify_headerDelimiter))
             let isHeader = 0
         else
-            call setline(i, prefix . join(wordsList, s:delimiter))
+            call setline(i, prefix . join(wordsList, b:tablify_delimiter))
         endif
 
         let i += 1
     endwhile
 
     let saveCursor = getpos(".")
-    if s:noInnerRows
+    if b:tablify_noInnerRows
         execute "normal " . a:firstline . "Gdd"
         execute "normal " . (a:lastline - 1) . "Gdd"
     else
@@ -260,9 +235,9 @@ function! <SID>MakeCell(word, width)
     let res = a:word
     let wordLength = strwidth(a:word)
     if a:width > wordLength
-        if s:align == 'right'
+        if b:align == 'right'
             let res = repeat(' ', a:width - wordLength) . res
-        elseif s:align == 'center'
+        elseif b:align == 'center'
             let diff = float2nr(floor((a:width - wordLength) / 2.0))
             let res = repeat(' ', diff) . res . repeat(' ', a:width - wordLength - diff)
         else
@@ -270,14 +245,40 @@ function! <SID>MakeCell(word, width)
         endif
     endif
 
-    if s:cellLeftPadding > 0
-        let res = repeat(' ', s:cellLeftPadding) . res
+    if b:tablify_cellLeftPadding > 0
+        let res = repeat(' ', b:tablify_cellLeftPadding) . res
     endif
-    if s:cellRightPadding > 0
-        let res = res . repeat(' ', s:cellRightPadding)
+    if b:tablify_cellRightPadding > 0
+        let res = res . repeat(' ', b:tablify_cellRightPadding)
     endif
 
     return res
+endfunction
+
+function! <SID>GetRowMaxLines(words)
+    let i = 0
+    let wordsCnt = len(a:words)
+    
+    let maxLines = 1
+
+    while i < wordsCnt
+        let word = a:words[i]
+        let index = stridx(word, '\n')
+        let start = 0
+
+        let matchCnt = 0
+        while stridx(word, '\n', start) != -1
+            let start = stridx(word, '\n', start) + 2
+            let matchCnt += 1
+            if matchCnt > maxLines
+                let maxLines = matchCnt
+            endif
+        endwhile
+        
+        let i += 1
+    endwhile
+
+    return maxLines
 endfunction
 
 function! <SID>GetCommonPrefix(fline, lline)
@@ -323,9 +324,9 @@ function! <SID>GetColumnWidths(fline, lline)
 
     while linenum <= a:lline
         let line = getline(linenum)
-        let words = split(line, s:delimiter, 1)
+        let words = split(line, escape(b:tablify_delimiter, '$^'), 1)
         if len(words) == 1
-            let words = split(line, s:headerDelimiter, 1)
+            let words = split(line, escape(b:tablify_headerDelimiter, '$^'), 1)
         endif
 
         call <SID>DebugEcho('Line #' . linenum . ': ' . line)
