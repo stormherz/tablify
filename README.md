@@ -76,7 +76,7 @@ There is no problem of making tables out of commonly prefixed text lines, like:
 ## Configuration
 Tablify behaviour can be configured on per-buffer basis with the folowing variables:  
 `g:loaded_tablify` - set to `1` to disable loading of the plugin  
-`b:tablify_headerDelimiter` - default value is `#`, symbol that separates header cells in text
+`b:tablify_headerDelimiter` - default value is `#`, symbol that separates header cells in text  
 `b:tablify_delimiter` - default value is `|`, symbol that separated value cells in text  
   
 `b:tablify_vertDelimiter` - default value is `|`, vertical delimiter symbol for filling up table rows  
