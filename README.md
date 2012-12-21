@@ -93,3 +93,10 @@ Tablify behaviour can be configured on per-buffer basis with the folowing variab
 `b:tablify_noInnerRows` - default value is `0`, you can set value to `1` to disable inner delimiter rows  
 `b:tablify_cellLeftPadding` - default value is `1`, number of spaces used for left cell padding  
 `b:tablify_cellRightPadding` - default value is `1`, number of spaces used for right cell padding
+  
+## Changelog
+* **0.3** Core functionality refactoring, added table selection and sorting
+* **0.2.2** Per-buffer configuration
+* **0.2.1** Tablification with common prefix
+* **0.2** Bug fixes, additional <Leader>tl mapping
+* **0.1** Initial upload
