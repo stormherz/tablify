@@ -17,7 +17,13 @@ There is a small list of commands you need to know before starting making tables
 `\tl` or `\tt` - turns selected lines into table (left-aligned text)  
 `\tc` - turns selected lines into table (centered text)  
 `\tr` - turns selected lines into table (right-aligned text)  
-`\tu` - convert selected table back into raw text format in case you want to add some changes in it
+`\tu` - convert selected table back into raw text format in case you want to add some changes in it  
+  
+`\ta` - select formed table with cursor anywhere inside of it (also selects structured text for future tables)
+  
+Operations with formed and selected table:  
+`\ts` - sort table (column number will be prompted), supports text and numeric sorting
+  
 
 Every line of your future table is a text line with cells, separated by `|` symbol (or any other symbol you choose for `g:tablify_raw_delimiter` variable in your `.vimrc` file).
 
