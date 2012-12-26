@@ -1,5 +1,5 @@
 " Vim tablification plugin - turns data into nice-looking tables
-" Last Change:	2012 Dec 21
+" Last Change:	2012 Dec 26
 " Maintainer:	Vladimir Shvets <stormherz@gmail.com>
 
 " to debug or not to debug (messages, info, etc)
@@ -44,9 +44,6 @@ function! <SID>Reconfigure()
     let b:tablify_horDelimiter = exists('b:tablify_horDelimiter') ? b:tablify_horDelimiter : '-'
     let b:tablify_horHeaderDelimiter = exists('b:tablify_horHeaderDelimiter') ? b:tablify_horHeaderDelimiter : '~'
     let b:tablify_divideDelimiter = exists('b:tablify_divideDelimiter') ? b:tablify_divideDelimiter : '+'
-
-    " use row delimiters
-    let b:tablify_noInnerRows = exists('b:tablify_noInnerRows') ? b:tablify_noInnerRows : 0
 
     " number of spaces for left and right table cell padding
     let b:tablify_cellLeftPadding = exists('b:tablify_cellLeftPadding') ? b:tablify_cellLeftPadding : 1
@@ -144,7 +141,8 @@ function! <SID>GetCommonPrefix(fline, lline)
                 let i += 1
             endwhile
 
-            if prefix == ''
+            let prefixLength = len(prefix)
+            if prefixLength == 0 || prefix[prefixLength - 1] != ' '
                 return ''
             endif
         endif
@@ -155,8 +153,51 @@ function! <SID>GetCommonPrefix(fline, lline)
     return prefix
 endfunction
 
+" returns row lines count
+function! <SID>GetRowLinesCount(data)
+    if len(a:data) == 0
+        return
+    endif
+
+    let rowLinesCnt = []
+    let columnCnt = len(a:data[0])
+
+    let lineIndex = 0
+    for line in a:data
+        let i = 0
+        let wordsCnt = len(line)
+
+        call add(rowLinesCnt, 0)
+
+        while i < wordsCnt
+            let word = line[i]
+
+            let index = stridx(word, '\n')
+            if index == -1
+                let linesCnt = 1
+            else
+                let linesCnt = 1
+                while index != -1
+                    let linesCnt += 1
+                    let index = stridx(word, '\n', index + 1)
+                endwhile
+            endif
+
+            if linesCnt > rowLinesCnt[lineIndex]
+                let rowLinesCnt[lineIndex] = linesCnt
+            endif
+
+            let i += 1
+        endwhile
+
+        let lineIndex += 1
+    endfor
+
+    return rowLinesCnt
+endfunction
+
 " returns max column widths for table data
-function! <SID>GetColumnWidths(data)
+function! <SID>GetColumnWidths(data, rowLinesCnt)
     if len(a:data) == 0
         return
     endif
@@ -171,18 +212,34 @@ function! <SID>GetColumnWidths(data)
         let i += 1
     endwhile
 
+    let lineIndex = 0
     for line in a:data
         let i = 0
         let wordsCnt = len(line)
 
         while i < wordsCnt
-            let wordLength = len(line[i])
+            if a:rowLinesCnt[lineIndex] > 1
+                let parts = split(line[i], '\\n')
+                let wordLength = 0
+                for part in parts
+                    let part = substitute(part, "^\\s\\+\\|\\s\\+$", '', 'g')
+                    let partLength = len(part)
+                    if partLength > wordLength
+                        let wordLength = partLength
+                    endif
+                endfor
+            else
+                let wordLength = len(line[i])
+            endif
+
             if wordLength > maxColumnWidth[i]
                 let maxColumnWidth[i] = wordLength
             endif
 
             let i += 1
         endwhile
+
+        let lineIndex += 1
     endfor
 
     return maxColumnWidth
@@ -190,6 +247,8 @@ endfunction
 
 " Sorts table by one of the columns (user input)
 function! <SID>Sort() range
+    call <SID>Reconfigure()
+
     call inputsave()
     let column = str2nr(input('Sort column: '))
     call inputrestore()
@@ -245,6 +304,12 @@ function! <SID>Sort() range
     endfor
 
     let data['data'] = newData[:]
+    let values = newData[:]
+    if len(data['header']) > 0
+        call insert(values, data['header'], 0)
+    endif
+    let rowLinesCnt = <SID>GetRowLinesCount(values)
+    let data['rowLinesCnt'] = rowLinesCnt
 
     let linesCnt = a:lastline - a:firstline
     exec "normal " . a:firstline . 'GV' . linesCnt . 'jd'
@@ -315,54 +380,87 @@ function! <SID>PrintTable(data, line)
     
     let saveCursor = getpos(".")
 
-    for words in values
+    let rowLinesCnt = a:data['rowLinesCnt']
+
+    let lineIndex = 0
+    for line in values
         let j = 0
-        let newLine = b:tablify_vertDelimiter
 
-        for word in words
-            let cell = <SID>MakeCell(word, columnWidths[j])
-            let newLine .= cell . b:tablify_vertDelimiter
+        if rowLinesCnt[lineIndex] == 1
+            let newLine = b:tablify_vertDelimiter
 
-            let j += 1
-        endfor
+            for word in line
+                let cell = <SID>MakeCell(word, columnWidths[j])
+                let newLine .= cell . b:tablify_vertDelimiter
 
-        call append(i - 1, prefix . newLine)
+                let j += 1
+            endfor
+
+            call append(i - 1, prefix . newLine)
+            let i += 1
+        else
+            let lines = []
+            let k = 0
+            while k < rowLinesCnt[lineIndex]
+                let lst = []
+                for rlc in columnWidths
+                    let length = rlc + b:tablify_cellLeftPadding + b:tablify_cellRightPadding
+                    call add(lst, repeat(' ', length))
+                endfor
+
+                call add(lines, lst)
+                let k += 1
+            endwhile
+
+            let k = 0
+            for word in line
+                let parts = split(word, '\\n', 1)
+
+                let newLine = b:tablify_vertDelimiter
+                if len(parts) > 1
+                    let n = 0
+                    for part in parts
+                        let trimmedPart = substitute(part, "^\\s\\+\\|\\s\\+$", '', 'g')
+
+                        let cell = <SID>MakeCell(trimmedPart, columnWidths[j])
+                        let lines[n][k] = cell
+
+                        let n += 1
+                    endfor
+                else
+                    let cell = <SID>MakeCell(word, columnWidths[j])
+                    let lines[0][k] = cell
+                endif
+
+                let j += 1
+                let k += 1
+            endfor
+
+            for addLine in lines
+                let newLine = join(addLine, b:tablify_vertDelimiter)
+                let newLine = b:tablify_vertDelimiter . newLine . b:tablify_vertDelimiter
+
+                call append(i - 1, prefix . newLine)
+                let i += 1
+            endfor
+        endif
+
+        if isHeader == 1 && lineIndex == 0
+            call append(i - 1, delimiterHeaderRow)
+        else
+            call append(i - 1, delimiterRow)
+        endif
 
         let i += 1
+        let lineIndex += 1
     endfor
 
     let lastline = i - 1
-    if b:tablify_noInnerRows
-        call append(a:line - 1, delimiterRow)
-        call append(lastline + 1, delimiterRow)
+
+    if isHeader == 1
+        call append(a:line - 1, delimiterHeaderRow)
     else
-        let diff = lastline - a:line
-        let i = diff
-
-        if isHeader == 1
-            call append(a:line - 1, delimiterHeaderRow)
-        else
-            call append(a:line - 1, delimiterRow)
-        endif
-
-        let start = 1
-        while i > 0
-            if isHeader == 1 && start <= 2
-                call append(a:line + start, delimiterHeaderRow)
-            else
-                call append(a:line + start, delimiterRow)
-            endif
-
-            if start == 3
-                let isHeader = 0
-            endif
-
-            let i -= 1
-            let start += 2
-        endwhile
-
-        let gotoLine = a:line + ((lastline - a:line) * 2) + 1
-        call append(gotoLine, delimiterRow)
+        call append(a:line - 1, delimiterRow)
     endif
     call setpos('.', saveCursor)
 
@@ -470,9 +568,11 @@ function! <SID>GetRawData(fline, lline)
     if len(header) > 0
         call insert(tableData, header, 0)
     endif
-    let maxColumnWidths = <SID>GetColumnWidths(tableData)
+    let rowLinesCnt = <SID>GetRowLinesCount(tableData)
+    let maxColumnWidths = <SID>GetColumnWidths(tableData, rowLinesCnt)
 
     return {
+        \'rowLinesCnt': rowLinesCnt,
         \'prefix': prefix,
         \'widths': maxColumnWidths,
         \'header': header,
@@ -490,6 +590,10 @@ function! <SID>GetTableData(fline, lline)
 
     let nextHeader = 0
     let validLines = 0
+    let mergedLine = []
+    let rowLinesCnt = []
+    let currentRowCount = 1
+
     while linenum <= a:lline
         let line = getline(linenum)
 
@@ -513,23 +617,42 @@ function! <SID>GetTableData(fline, lline)
         if isInnerRow == 1
             let validLines += 1
             let linenum += 1
+
+            if len(mergedLine) != 0
+                if isHeader == 1
+                    let header = mergedLine
+                else
+                    call add(dataLines, mergedLine)
+                endif
+                call add(rowLinesCnt, currentRowCount)
+            endif
+
+            let mergedLine = []
+            let currentRowCount = 1
             continue
         endif
 
         let data = split(line, b:tablify_vertDelimiter)
-        let j = 0
         let cnt = len(data)
+
+        let n = 0
+        if len(mergedLine) == 0
+            while n < cnt
+                call insert(mergedLine, '', n)
+                let n += 1
+            endwhile
+        endif
+
+        let j = 0
         while j < cnt
             let data[j] = substitute(data[j], "^\\s\\+\\|\\s\\+$", '', 'g')
+            if mergedLine[j] != '' && data[j] != ''
+                let mergedLine[j] .= '\n'
+                let currentRowCount += 1
+            endif
+            let mergedLine[j] .= data[j]
             let j += 1
         endwhile
-
-        if nextHeader == 1 && len(header) == 0
-            let header = data
-            let nextHeader = 0
-        else
-            call add(dataLines, data)
-        endif
 
         let linenum += 1
     endwhile
@@ -543,9 +666,10 @@ function! <SID>GetTableData(fline, lline)
         return {}
     endif
 
-    let maxColumnWidths = <SID>GetColumnWidths(values)
+    let maxColumnWidths = <SID>GetColumnWidths(values, rowLinesCnt)
 
     let res = {
+        \'rowLinesCnt': rowLinesCnt,
         \'prefix': prefix,
         \'widths': maxColumnWidths,
         \'header': header,
@@ -584,6 +708,8 @@ endfunction
 
 " Selects the table if the cursor is in it
 function! <SID>Select()
+    call <SID>Reconfigure()
+
     let firstline = 0
     let lastline = 0
 

@@ -78,6 +78,27 @@ There is no problem of making tables out of commonly prefixed text lines, like:
      *
      */
 
+Multiline cell content is also supported, just place `\n` where line break should occur, and tablify will do the rest:  
+
+    Artist # Song # Album # Year
+    Pantera | Cemetery Gates | Cowboys from Hell | 1990
+    Tool \n (great perfomance)| Useful idiot | Ænima | 1996
+    Ozzy Osbourne | Let Me Hear You \n Scream | Scream | 2010
+
+The sample above transforms to table:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    | Artist             | Song            | Album             | Year |
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    | Pantera            | Cemetery Gates  | Cowboys from Hell | 1990 |
+    +--------------------+-----------------+-------------------+------+
+    | Tool               | Useful idiot    | Ænima             | 1996 |
+    | (great perfomance) |                 |                   |      |
+    +--------------------+-----------------+-------------------+------+
+    | Ozzy Osbourne      | Let Me Hear You | Scream            | 2010 |
+    |                    | Scream          |                   |      |
+    +--------------------+-----------------+-------------------+------+
+
 
 ## Configuration
 Tablify behaviour can be configured on per-buffer basis with the folowing variables:  
@@ -90,11 +111,11 @@ Tablify behaviour can be configured on per-buffer basis with the folowing variab
 `b:tablify_horHeaderDelimiter` - default value is `~`, horizontal delimiter symbol for filling up tabls header rows  
 `b:tablify_divideDelimiter` - default value is `+`, symbol at the row/column intersection
   
-`b:tablify_noInnerRows` - default value is `0`, you can set value to `1` to disable inner delimiter rows  
 `b:tablify_cellLeftPadding` - default value is `1`, number of spaces used for left cell padding  
 `b:tablify_cellRightPadding` - default value is `1`, number of spaces used for right cell padding
   
 ## Changelog
+* **0.4** Multiline cell content
 * **0.3** Core functionality refactoring, added table selection and sorting
 * **0.2.2** Per-buffer configuration
 * **0.2.1** Tablification with common prefix
