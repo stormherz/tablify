@@ -24,7 +24,11 @@ tables out of your text. Assuming your <Leader> is "\":
 <Leader>ta - select formed table with cursor anywhere inside of it (also selects structured text for future tables)
   
 Operations with formed and selected table:  
-<Leader>ts - sort table (column number will be prompted), supports text and numeric sorting
+<Leader>tS - sort table (column number will be prompted), supports text and numeric sorting
+<Leader>tRL - realign table column to be left-aligned  
+<Leader>tRR - realign table column to be right-aligned  
+<Leader>tRC - realign table column to be centered  
+
 
 Every line of your future table is a text line with cells, separated by "|"
 symbol (or any other symbol you choose for "g:tablify_raw_delimiter" variable in your .vimrc file).

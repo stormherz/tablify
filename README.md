@@ -22,10 +22,12 @@ There is a small list of commands you need to know before starting making tables
 `\ta` - select formed table with cursor anywhere inside of it (also selects structured text for future tables)
   
 Operations with formed and selected table:  
-`\ts` - sort table (column number will be prompted), supports text and numeric sorting
-  
+`\tS` - sort table (column number will be prompted), supports text and numeric sorting
+`\tRL` - realign table column to be left-aligned  
+`\tRR` - realign table column to be right-aligned  
+`\tRC` - realign table column to be centered  
 
-Every line of your future table is a text line with cells, separated by `|` symbol (or any other symbol you choose for `g:tablify_raw_delimiter` variable in your `.vimrc` file).
+Every line of your future table is a text line with cells, separated by `|` symbol (or any other symbol you choose for `b:tablify_raw_delimiter` variable in your `.vimrc` file).
 
 Let's assume we have a few lines of text we would like to see as table:  
 
@@ -48,7 +50,7 @@ Now select these lines and press `\tt` to make a table:
 
 I bet it was pretty simple. Now you can press `u` to undo making of table or select table and press `\tu` to return to the text you're started from. After that you can try `\tc` and `\tr` to see what it looks like to have aligned text in table.
 
-It is obvious that our table here have some kind of header and it will be great to visually distinguish it from table data. To do so, just separate the header cells with `#` symbol (or any other symbol you choose for `g:tablify_header_delimiter` variable in your `.vimrc` file):  
+It is obvious that our table here have some kind of header and it will be great to visually distinguish it from table data. To do so, just separate the header cells with `#` symbol (or any other symbol you choose for `b:tablify_header_delimiter` variable in your `.vimrc` file):  
 
     Artist # Song # Album # Year
     Tool | Useful idiot | Ænima | 1996
@@ -115,6 +117,7 @@ Tablify behaviour can be configured on per-buffer basis with the folowing variab
 `b:tablify_cellRightPadding` - default value is `1`, number of spaces used for right cell padding
   
 ## Changelog
+* **0.4.1** Separate column alignments  
 * **0.4** Multiline cell content
 * **0.3** Core functionality refactoring, added table selection and sorting
 * **0.2.2** Per-buffer configuration

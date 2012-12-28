@@ -1,5 +1,5 @@
 " Vim tablification plugin - turns data into nice-looking tables
-" Last Change:	2012 Dec 26
+" Last Change:	2012 Dec 28
 " Maintainer:	Vladimir Shvets <stormherz@gmail.com>
 
 " to debug or not to debug (messages, info, etc)
@@ -18,7 +18,10 @@ noremap <script> <silent> <Leader>tc :call <SID>Tablify('center')<CR>
 
 noremap <script> <silent> <Leader>ta :call <SID>Select()<CR>
 
-noremap <script> <silent> <Leader>ts :call <SID>Sort()<CR>
+noremap <script> <silent> <Leader>tS :call <SID>Sort()<CR>
+noremap <script> <silent> <Leader>tRL :call <SID>Realign('left')<CR>
+noremap <script> <silent> <Leader>tRR :call <SID>Realign('right')<CR>
+noremap <script> <silent> <Leader>tRC :call <SID>Realign('center')<CR>
 
 noremap <script> <silent> <Leader>tu :call <SID>Untablify()<CR>
 
@@ -92,13 +95,13 @@ function! <SID>Untablify() range
 endfunction
 
 " Creates cell content with known alignment, width, and, of course, word
-function! <SID>MakeCell(word, width)
+function! <SID>MakeCell(word, width, align)
     let res = a:word
     let wordLength = strwidth(a:word)
     if a:width > wordLength
-        if b:align == 'right'
+        if a:align == 'right'
             let res = repeat(' ', a:width - wordLength) . res
-        elseif b:align == 'center'
+        elseif a:align == 'center'
             let diff = float2nr(floor((a:width - wordLength) / 2.0))
             let res = repeat(' ', diff) . res . repeat(' ', a:width - wordLength - diff)
         else
@@ -317,6 +320,31 @@ function! <SID>Sort() range
     
 endfunction
 
+" Sorts table by one of the columns (user input)
+function! <SID>Realign(align) range
+    call <SID>Reconfigure()
+
+    call inputsave()
+    let column = str2nr(input('Realign column: '))
+    call inputrestore()
+
+    let data = <SID>GetTableData(a:firstline, a:lastline)
+    if len(data) == 0
+        return
+    endif
+
+    if column < 1 || column > len(data['data'][0])
+        return
+    endif
+
+    let data['aligns'][column - 1] = a:align
+
+    let linesCnt = a:lastline - a:firstline
+    exec "normal " . a:firstline . 'GV' . linesCnt . 'jd'
+    call <SID>PrintTable(data, a:firstline)
+    
+endfunction
+
 " returns column list from table data
 function! <SID>GetColumn(data, column)
     let res = []
@@ -390,7 +418,7 @@ function! <SID>PrintTable(data, line)
             let newLine = b:tablify_vertDelimiter
 
             for word in line
-                let cell = <SID>MakeCell(word, columnWidths[j])
+                let cell = <SID>MakeCell(word, columnWidths[j], a:data['aligns'][j])
                 let newLine .= cell . b:tablify_vertDelimiter
 
                 let j += 1
@@ -422,13 +450,13 @@ function! <SID>PrintTable(data, line)
                     for part in parts
                         let trimmedPart = substitute(part, "^\\s\\+\\|\\s\\+$", '', 'g')
 
-                        let cell = <SID>MakeCell(trimmedPart, columnWidths[j])
+                        let cell = <SID>MakeCell(trimmedPart, columnWidths[j], a:data['aligns'][j])
                         let lines[n][k] = cell
 
                         let n += 1
                     endfor
                 else
-                    let cell = <SID>MakeCell(word, columnWidths[j])
+                    let cell = <SID>MakeCell(word, columnWidths[j], a:data['aligns'][j])
                     let lines[0][k] = cell
                 endif
 
@@ -513,6 +541,7 @@ function! <SID>GetRawData(fline, lline)
     let values = []
     let prefix = <SID>GetCommonPrefix(a:fline, a:lline)
     let prefixLength = len(prefix)
+    let aligns = []
 
     let prevCnt = 0
     while linenum <= a:lline
@@ -543,6 +572,14 @@ function! <SID>GetRawData(fline, lline)
         let i = 0
         let trimmedWords = []
         while i < wordsCnt
+            if len(aligns) == 0
+                let g = 0
+                while g < wordsCnt
+                    call add(aligns, 'left')
+                    let g += 1
+                endwhile
+            endif
+
             let word = words[i]
 
             if i == 0 && prefixLength > 0
@@ -572,6 +609,7 @@ function! <SID>GetRawData(fline, lline)
     let maxColumnWidths = <SID>GetColumnWidths(tableData, rowLinesCnt)
 
     return {
+        \'aligns': aligns,
         \'rowLinesCnt': rowLinesCnt,
         \'prefix': prefix,
         \'widths': maxColumnWidths,
@@ -592,6 +630,7 @@ function! <SID>GetTableData(fline, lline)
     let validLines = 0
     let mergedLine = []
     let rowLinesCnt = []
+    let aligns = []
     let currentRowCount = 1
 
     while linenum <= a:lline
@@ -643,14 +682,54 @@ function! <SID>GetTableData(fline, lline)
             endwhile
         endif
 
+        if len(aligns) == 0
+            let n = 0
+            while n < cnt
+                call insert(aligns, 'left', n)
+                let n += 1
+            endwhile
+        endif
+
         let j = 0
         while j < cnt
-            let data[j] = substitute(data[j], "^\\s\\+\\|\\s\\+$", '', 'g')
-            if mergedLine[j] != '' && data[j] != ''
+            let word = data[j]
+
+            let spacesPrefix = 0
+            let spacesSuffix = 0
+            let wordLength = strwidth(data[j])
+    
+            let g = 0
+            while word[g] == ' '
+                let spacesPrefix += 1
+                let g += 1
+            endwhile
+
+            let g = wordLength - 1
+            while word[g] == ' '
+                let spacesSuffix += 1
+                let g -= 1
+            endwhile
+
+            let spacesPrefix -= b:tablify_cellLeftPadding
+            let spacesSuffix -= b:tablify_cellRightPadding
+
+            let word = substitute(word, "^\\s\\+\\|\\s\\+$", '', 'g')
+
+            if word != ''
+                if spacesPrefix > 0 && spacesSuffix > 0
+                    let aligns[j] = 'center'
+                elseif spacesPrefix > 0
+                    let aligns[j] = 'right'
+                elseif spacesSuffix > 0
+                    let aligns[j] = 'left'
+                endif
+            endif
+            
+            if mergedLine[j] != '' && word != ''
                 let mergedLine[j] .= '\n'
                 let currentRowCount += 1
             endif
-            let mergedLine[j] .= data[j]
+            let mergedLine[j] .= word
             let j += 1
         endwhile
 
@@ -669,6 +748,7 @@ function! <SID>GetTableData(fline, lline)
     let maxColumnWidths = <SID>GetColumnWidths(values, rowLinesCnt)
 
     let res = {
+        \'aligns': aligns,
         \'rowLinesCnt': rowLinesCnt,
         \'prefix': prefix,
         \'widths': maxColumnWidths,
