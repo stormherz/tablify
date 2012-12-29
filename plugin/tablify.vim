@@ -1,5 +1,5 @@
 " Vim tablification plugin - turns data into nice-looking tables
-" Last Change:	2012 Dec 28
+" Last Change:	2012 Dec 29
 " Maintainer:	Vladimir Shvets <stormherz@gmail.com>
 
 " to debug or not to debug (messages, info, etc)
@@ -22,6 +22,11 @@ noremap <script> <silent> <Leader>tS :call <SID>Sort()<CR>
 noremap <script> <silent> <Leader>tRL :call <SID>Realign('left')<CR>
 noremap <script> <silent> <Leader>tRR :call <SID>Realign('right')<CR>
 noremap <script> <silent> <Leader>tRC :call <SID>Realign('center')<CR>
+
+noremap <script> <silent> <Leader>tK :call <SID>MoveRow('up')<CR>
+noremap <script> <silent> <Leader>tJ :call <SID>MoveRow('down')<CR>
+noremap <script> <silent> <Leader>tL :call <SID>MoveCol('right')<CR>
+noremap <script> <silent> <Leader>tH :call <SID>MoveCol('left')<CR>
 
 noremap <script> <silent> <Leader>tu :call <SID>Untablify()<CR>
 
@@ -786,10 +791,27 @@ function! <SID>isTableRow(line)
     return 0
 endfunction
 
-" Selects the table if the cursor is in it
-function! <SID>Select()
-    call <SID>Reconfigure()
+" returns 1 if line in in inner table row format
+function! <SID>isTableInnerRow(line)
+    if a:line == ''
+        return 0
+    endif
 
+    let lineLength = len(a:line)
+
+    if a:line[0] == b:tablify_divideDelimiter && a:line[lineLength - 1] == b:tablify_divideDelimiter
+        return 1
+    endif
+
+    if a:line[0] == b:tablify_horHeaderDelimiter && a:line[lineLength - 1] == b:tablify_horHeaderDelimiter
+        return 1
+    endif
+
+    return 0
+endfunction
+
+" Get table lines (start, end)
+function! <SID>GetTableLines()
     let firstline = 0
     let lastline = 0
 
@@ -815,10 +837,194 @@ function! <SID>Select()
         let linenum += 1
         let line = getline(linenum)
     endwhile
-    let lastline = linenum + 1
+    let lastline = linenum - 1
 
-    let linesCnt = (lastline - firstline) - 2
-
-    exec "normal " . firstline . "GV" . linesCnt . "j"
+    return {
+        \'firstline': firstline,
+        \'lastline': lastline}
 endfunction
+
+" Selects the table if the cursor is in it
+function! <SID>Select()
+    call <SID>Reconfigure()
+
+    let tableLines = <SID>GetTableLines()
+    let linesCnt = (tableLines['lastline'] - tableLines['firstline'])
+
+    exec "normal " . tableLines['firstline'] . "GV" . linesCnt . "j"
+endfunction
+
+" Moves lines of the table up/down
+function! <SID>MoveRow(direction)
+    call <SID>Reconfigure()
+    let tableLines = <SID>GetTableLines()
+    let firstline = tableLines['firstline']
+    let lastline = tableLines['lastline']
+
+    let data = <SID>GetTableData(firstline, lastline)
+    if len(data) == 0
+        return {}
+    endif
+
+    let pos = <SID>GetCursorPos()
+    if len(pos) == 0 || (a:direction != 'up' && a:direction != 'down')
+        return
+    endif
+
+    let tableRows = len(data['data'])
+    let isHeader = len(data['header']) > 0
+    if isHeader
+        let tableRows += 1
+    endif
+
+    if (pos['row'] == 0 && a:direction == 'up') || (pos['row'] == (tableRows - 1) && a:direction == 'down')
+        return
+    endif
+
+    if (pos['row'] == 1 && a:direction == 'up' && isHeader) || (pos['row'] == 0 && a:direction == 'down' && isHeader)
+        return
+    endif
+
+    let fromRow = pos['row']
+    
+    let tableData = copy(data)
+    let newData = tableData['data']
+    
+    let toRow = (a:direction == 'up') ? fromRow - 1 : fromRow + 1
+    let linesCnt = tableData['rowLinesCnt'][fromRow]
+    let tableData['rowLinesCnt'][fromRow] = tableData['rowLinesCnt'][toRow]
+    let tableData['rowLinesCnt'][toRow] = linesCnt
+
+    let lineRowsCnt = tableData['rowLinesCnt'][fromRow] 
+
+    if isHeader
+        let fromRow -= 1
+    endif
+
+    let toRow = (a:direction == 'up') ? fromRow - 1 : fromRow + 1
+    if fromRow < 0 || toRow >= len(newData)
+        return
+    endif
+
+    let line = newData[fromRow]
+    let newData[fromRow] = newData[toRow]
+    let newData[toRow] = line
+
+    let cursorPos = getpos('.')
+    let cursorPos[1] += (a:direction == 'up') ? -lineRowsCnt - 1 : lineRowsCnt + 1
+
+    exec "normal " . firstline . 'GV' . (lastline - firstline) . 'jd'
+    call <SID>PrintTable(tableData, firstline)
+
+    call setpos('.', cursorPos)
+endfunction
+
+" Moves columns of the table left/right
+function! <SID>MoveCol(direction)
+    call <SID>Reconfigure()
+    let tableLines = <SID>GetTableLines()
+    let firstline = tableLines['firstline']
+    let lastline = tableLines['lastline']
+
+    let data = <SID>GetTableData(firstline, lastline)
+    if len(data) == 0
+        return {}
+    endif
+
+    let pos = <SID>GetCursorPos()
+    if len(pos) == 0 || (a:direction != 'left' && a:direction != 'right')
+        return
+    endif
+
+    let tableCols = len(data['widths'])
+
+    if pos['col'] >= tableCols
+        return
+    endif
+
+    if (pos['col'] == 0 && a:direction == 'left') || (pos['col'] == (tableCols - 1) && a:direction == 'right')
+        return
+    endif
+
+    let fromCol = pos['col']
+
+    let toCol = (a:direction == 'left') ? fromCol - 1 : fromCol + 1
+    let colWidth = data['widths'][toCol] + b:tablify_cellLeftPadding + b:tablify_cellRightPadding + 1
+    let tableData = copy(data)
+    let newData = tableData['data']
+
+    if len(tableData['header']) > 0
+        let value = tableData['header'][fromCol]
+        let tableData['header'][fromCol] = tableData['header'][toCol]
+        let tableData['header'][toCol] = value
+    endif
+
+    for line in newData
+        let value = line[fromCol]
+        let line[fromCol] = line[toCol]
+        let line[toCol] = value
+    endfor
+
+    let width = tableData['widths'][fromCol]
+    let tableData['widths'][fromCol] = tableData['widths'][toCol]
+    let tableData['widths'][toCol] = width
+
+    let cursorPos = getpos('.')
+    let cursorPos[2] += (a:direction == 'left') ? -colWidth : colWidth
+
+    exec "normal " . firstline . 'GV' . (lastline - firstline) . 'jd'
+    call <SID>PrintTable(tableData, firstline)
+
+    call setpos('.', cursorPos)
+endfunction
+
+" Determines cursor position in table, returns dictionary with row and col
+function! <SID>GetCursorPos() range
+    call <SID>Reconfigure()
+
+    let tableLines = <SID>GetTableLines()
+    let firstline = tableLines['firstline']
+    let lastline = tableLines['lastline']
+
+    let data = <SID>GetTableData(firstline, lastline)
+    if len(data) == 0
+        return {}
+    endif
+
+    let line = getline('.')
+    let isTableRow = <SID>isTableInnerRow(line)
+    if isTableRow == 1
+        return {}
+    endif
+
+    let cursorPos = getpos('.')
+    let i = cursorPos[1]
+    let rowIndex = 0
+    while i >= firstline
+        let line = getline(i)
+        if <SID>isTableInnerRow(line)
+            let rowIndex += 1
+        endif
+        let i -= 1
+    endwhile
+    let rowIndex -= 1
+
+    let colIndex = 0
+    let i = cursorPos[2] - 1
+    let line = getline(cursorPos[1])
+    
+    while i >= 0
+        if line[i] == b:tablify_delimiter
+            let colIndex += 1
+        endif
+        let i -= 1
+    endwhile
+    let colIndex -= 1
+
+    let pos = {
+        \'row': rowIndex,
+        \'col': colIndex}
+    return pos
+endfunction
+
 

@@ -27,6 +27,12 @@ Operations with formed and selected table:
 `\tRR` - realign table column to be right-aligned  
 `\tRC` - realign table column to be centered  
 
+Operations with cursor inside the table:  
+`\tK` - move current row (where the cursor is) up  
+`\tJ` - move current row down  
+`\tL` - move current column (where the cursor is) right  
+`\tH` - move current column left  
+
 Every line of your future table is a text line with cells, separated by `|` symbol (or any other symbol you choose for `b:tablify_raw_delimiter` variable in your `.vimrc` file).
 
 Let's assume we have a few lines of text we would like to see as table:  
