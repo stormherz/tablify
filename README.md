@@ -123,6 +123,7 @@ Tablify behaviour can be configured on per-buffer basis with the folowing variab
 `b:tablify_cellRightPadding` - default value is `1`, number of spaces used for right cell padding
   
 ## Changelog
+* **0.5** Row/column movement  
 * **0.4.1** Separate column alignments  
 * **0.4** Multiline cell content
 * **0.3** Core functionality refactoring, added table selection and sorting
