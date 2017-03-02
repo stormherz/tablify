@@ -1,5 +1,5 @@
 " Vim tablification plugin - turns data into nice-looking tables
-" Last Change:	2012 Dec 29
+" Last Change:	2017 Mar 02
 " Maintainer:	Vladimir Shvets <stormherz@gmail.com>
 
 " to debug or not to debug (messages, info, etc)
@@ -10,6 +10,8 @@ if exists("g:loaded_tablify") && s:tablify_debug == 0
 endif
 let g:loaded_tablify = 1
 
+" enabling restructured tables support for RST files
+autocmd BufEnter *.rst :let b:tablify_restructuredtext=1
 
 noremap <script> <silent> <Leader>tt :call <SID>Tablify('left')<CR>
 noremap <script> <silent> <Leader>tl :call <SID>Tablify('left')<CR>
@@ -51,11 +53,21 @@ function! <SID>Reconfigure()
     let b:tablify_vertDelimiter = exists('b:tablify_vertDelimiter') ? b:tablify_vertDelimiter : '|'
     let b:tablify_horDelimiter = exists('b:tablify_horDelimiter') ? b:tablify_horDelimiter : '-'
     let b:tablify_horHeaderDelimiter = exists('b:tablify_horHeaderDelimiter') ? b:tablify_horHeaderDelimiter : '~'
+    let b:tablify_horHeaderDelimiterBottom = b:tablify_horHeaderDelimiter
     let b:tablify_divideDelimiter = exists('b:tablify_divideDelimiter') ? b:tablify_divideDelimiter : '+'
 
     " number of spaces for left and right table cell padding
     let b:tablify_cellLeftPadding = exists('b:tablify_cellLeftPadding') ? b:tablify_cellLeftPadding : 1
     let b:tablify_cellRightPadding = exists('b:tablify_cellRightPadding') ? b:tablify_cellRightPadding : 1
+
+    " restructuredtext table header format
+    let b:tablify_restructuredtext = exists('b:tablify_restructuredtext') ? b:tablify_restructuredtext : 0
+    if b:tablify_restructuredtext
+        let b:tablify_vertDelimiter = '|'
+        let b:tablify_divideDelimiter = '+'
+        let b:tablify_horHeaderDelimiter = '-'
+        let b:tablify_horHeaderDelimiterBottom = '='
+    endif
 endfunction
 
 " Main tablification function, turns selected text into table representation
@@ -93,7 +105,7 @@ function! <SID>Untablify() range
     let lineCnt = (a:lastline - a:firstline) + 1
 
     exec "normal " . a:firstline . "G" . lineCnt . "dd"
-    
+
     call <SID>PrintData(tableData, a:firstline)
 
     exec "normal " . a:firstline . "G"
@@ -322,7 +334,7 @@ function! <SID>Sort() range
     let linesCnt = a:lastline - a:firstline
     exec "normal " . a:firstline . 'GV' . linesCnt . 'jd'
     call <SID>PrintTable(data, a:firstline)
-    
+
 endfunction
 
 " Sorts table by one of the columns (user input)
@@ -347,7 +359,7 @@ function! <SID>Realign(align) range
     let linesCnt = a:lastline - a:firstline
     exec "normal " . a:firstline . 'GV' . linesCnt . 'jd'
     call <SID>PrintTable(data, a:firstline)
-    
+
 endfunction
 
 " returns column list from table data
@@ -373,34 +385,53 @@ function! <SID>PrintTable(data, line)
     if len(a:data) == 0
         return
     endif
-    
+
     let columnWidths = a:data['widths']
     let columnCnt = len(a:data['data'][0])
 
     let i = 0
     let delimiterRow = b:tablify_divideDelimiter
+    let headerTopRow = b:tablify_divideDelimiter
+    let headerBottomRow = b:tablify_divideDelimiter
+
     let columnsWidth = 0
     while i < columnCnt
         if b:tablify_cellLeftPadding > 0
-            let spacer = repeat(b:tablify_horDelimiter, b:tablify_cellLeftPadding) 
+            let spacer = repeat(b:tablify_horDelimiter, b:tablify_cellLeftPadding)
             let delimiterRow = delimiterRow . spacer
+            let headerTopRow = headerTopRow . repeat(b:tablify_horHeaderDelimiter, b:tablify_cellLeftPadding)
+            let headerBottomRow = headerBottomRow . repeat(b:tablify_horHeaderDelimiterBottom, b:tablify_cellLeftPadding)
+
             let columnsWidth += b:tablify_cellLeftPadding
         endif
         if b:tablify_cellRightPadding > 0
-            let spacer = repeat(b:tablify_horDelimiter, b:tablify_cellRightPadding) 
+            let spacer = repeat(b:tablify_horDelimiter, b:tablify_cellRightPadding)
             let delimiterRow = delimiterRow . spacer
+            let headerTopRow = headerTopRow . repeat(b:tablify_horHeaderDelimiter, b:tablify_cellRightPadding)
+            let headerBottomRow = headerBottomRow . repeat(b:tablify_horHeaderDelimiterBottom, b:tablify_cellRightPadding)
+
             let columnsWidth += b:tablify_cellRightPadding
         endif
-    
+
         let delimiterRow .= repeat(b:tablify_horDelimiter, columnWidths[i]) . b:tablify_divideDelimiter
+        let headerTopRow = headerTopRow . repeat(b:tablify_horHeaderDelimiter, columnWidths[i]) . b:tablify_divideDelimiter
+        let headerBottomRow = headerBottomRow . repeat(b:tablify_horHeaderDelimiterBottom, columnWidths[i]) . b:tablify_divideDelimiter
+
         let columnsWidth += columnWidths[i]
         let i += 1
     endwhile
-    let delimiterHeaderRow = repeat(b:tablify_horHeaderDelimiter, len(columnWidths) + 1 + columnsWidth)
+    let delimiterHeaderRowTop = repeat(b:tablify_horHeaderDelimiter, len(columnWidths) + 1 + columnsWidth)
+    let delimiterHeaderRowBottom = repeat(b:tablify_horHeaderDelimiterBottom, len(columnWidths) + 1 + columnsWidth)
 
     let prefix = a:data['prefix']
     let delimiterRow = prefix . delimiterRow
-    let delimiterHeaderRow = prefix . delimiterHeaderRow
+    let delimiterHeaderRowTop = prefix . delimiterHeaderRowTop
+    let delimiterHeaderRowBottom = prefix . delimiterHeaderRowBottom
+
+    if b:tablify_restructuredtext
+        let delimiterHeaderRowTop = headerTopRow
+        let delimiterHeaderRowBottom = headerBottomRow
+    endif
 
     let isHeader = (len(a:data['header']) == 0) ? 0 : 1
 
@@ -410,7 +441,7 @@ function! <SID>PrintTable(data, line)
     if isHeader == 1
         call insert(values, a:data['header'], 0)
     endif
-    
+
     let saveCursor = getpos(".")
 
     let rowLinesCnt = a:data['rowLinesCnt']
@@ -479,7 +510,7 @@ function! <SID>PrintTable(data, line)
         endif
 
         if isHeader == 1 && lineIndex == 0
-            call append(i - 1, delimiterHeaderRow)
+            call append(i - 1, delimiterHeaderRowBottom)
         else
             call append(i - 1, delimiterRow)
         endif
@@ -491,7 +522,7 @@ function! <SID>PrintTable(data, line)
     let lastline = i - 1
 
     if isHeader == 1
-        call append(a:line - 1, delimiterHeaderRow)
+        call append(a:line - 1, delimiterHeaderRowTop)
     else
         call append(a:line - 1, delimiterRow)
     endif
@@ -552,13 +583,13 @@ function! <SID>GetRawData(fline, lline)
     while linenum <= a:lline
         let line = getline(linenum)
         if line == ''
-            return {}      
+            return {}
         endif
 
         let isHeader = 0
-        
+
         let words = split(line, escape(b:tablify_delimiter, '$^'), 1)
-        
+
         let wordsCnt = len(words)
         if wordsCnt == 1
             let words = split(line, escape(b:tablify_headerDelimiter, '$^'), 1)
@@ -602,7 +633,7 @@ function! <SID>GetRawData(fline, lline)
         else
             call add(values, trimmedWords)
         endif
-        
+
         let linenum += 1
     endwhile
 
@@ -631,7 +662,6 @@ function! <SID>GetTableData(fline, lline)
     let prefix = <SID>GetCommonPrefix(a:fline, a:lline)
     let prefixLength = len(prefix)
 
-    let nextHeader = 0
     let validLines = 0
     let mergedLine = []
     let rowLinesCnt = []
@@ -653,10 +683,6 @@ function! <SID>GetTableData(fline, lline)
         let isHeader = (line[0] == b:tablify_horHeaderDelimiter && line[lineLength - 1] == b:tablify_horHeaderDelimiter) ? 1 : 0
         let isInnerRow = (line[0] == b:tablify_divideDelimiter && line[lineLength - 1] == b:tablify_divideDelimiter) ||
             \(isHeader == 1) ? 1 : 0
-
-        if isHeader == 1
-            let nextHeader = 1
-        endif
 
         if isInnerRow == 1
             let validLines += 1
@@ -702,7 +728,7 @@ function! <SID>GetTableData(fline, lline)
             let spacesPrefix = 0
             let spacesSuffix = 0
             let wordLength = strwidth(data[j])
-    
+
             let g = 0
             while word[g] == ' '
                 let spacesPrefix += 1
@@ -729,7 +755,7 @@ function! <SID>GetTableData(fline, lline)
                     let aligns[j] = 'left'
                 endif
             endif
-            
+
             if mergedLine[j] != '' && word != ''
                 let mergedLine[j] .= '\n'
                 let currentRowCount += 1
@@ -782,7 +808,7 @@ function! <SID>isTableRow(line)
     if len(elements) > 1
         return 1
     endif
-    
+
     let elements = split(a:line, escape(b:tablify_headerDelimiter, '$^'), 1)
     if len(elements) > 1
         return 1
@@ -828,7 +854,7 @@ function! <SID>GetTableLines()
         let linenum -= 1
         let line = getline(linenum)
     endwhile
-    
+
     let firstline = linenum + 1
 
     let linenum = storedLine
@@ -886,16 +912,16 @@ function! <SID>MoveRow(direction)
     endif
 
     let fromRow = pos['row']
-    
+
     let tableData = copy(data)
     let newData = tableData['data']
-    
+
     let toRow = (a:direction == 'up') ? fromRow - 1 : fromRow + 1
     let linesCnt = tableData['rowLinesCnt'][fromRow]
     let tableData['rowLinesCnt'][fromRow] = tableData['rowLinesCnt'][toRow]
     let tableData['rowLinesCnt'][toRow] = linesCnt
 
-    let lineRowsCnt = tableData['rowLinesCnt'][fromRow] 
+    let lineRowsCnt = tableData['rowLinesCnt'][fromRow]
 
     if isHeader
         let fromRow -= 1
@@ -1012,7 +1038,7 @@ function! <SID>GetCursorPos() range
     let colIndex = 0
     let i = cursorPos[2] - 1
     let line = getline(cursorPos[1])
-    
+
     while i >= 0
         if line[i] == b:tablify_delimiter
             let colIndex += 1
