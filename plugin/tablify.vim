@@ -1,5 +1,5 @@
 " Vim tablification plugin - turns data into nice-looking tables
-" Last Change:	2017 Mar 02
+" Last Change:	2018 Apr 27
 " Maintainer:	Vladimir Shvets <stormherz@gmail.com>
 
 " to debug or not to debug (messages, info, etc)
@@ -611,7 +611,7 @@ function! <SID>GetRawData(fline, lline)
             if len(aligns) == 0
                 let g = 0
                 while g < wordsCnt
-                    call add(aligns, 'left')
+                    call add(aligns, b:align)
                     let g += 1
                 endwhile
             endif
